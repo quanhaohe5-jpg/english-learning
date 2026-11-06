@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语听读练习</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .header h1 { font-size: 20px; font-weight: 600; }
+        .user-badge {
+            background: #e8e8ed;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border: 0;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #0071e3; color: #fff; }
+        .btn-secondary { background: #e8e8ed; color: #1d1d1f; }
+        .btn-warning { background: #ff9500; color: #fff; }
+        .section {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 12px 14px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 10px;
+            border: 2px solid #e8e8ed;
+            border-radius: 10px;
+            background: #fff;
+            text-align: left;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .option-btn:hover { border-color: #0071e3; background: #f0f8ff; }
+        .option-btn.correct { border-color: #34c759; background: #f0fff4; }
+        .option-btn.wrong { border-color: #ff3b30; background: #fff5f5; }
+        .subtitle-line {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        .subtitle-line:last-child { border-bottom: none; }
+        .subtitle-en {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 4px;
+        }
+        .subtitle-zh {
+            font-size: 14px;
+            color: #6e6e73;
+            line-height: 1.5;
+        }
+        .word {
+            color: #ff9500;
+            font-weight: 500;
+            cursor: help;
+            border-bottom: 1px dashed #ff9500;
+        }
+        .hidden { display: none !important; }
+        .result-banner {
+            padding: 16px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 16px;
+        }
+        .result-banner.pass { background: #f0fff4; color: #34c759; }
+        .result-banner.fail { background: #fff5f5; color: #ff3b30; }
+        .progress-bar {
+            height: 6px;
+            background: #e8e8ed;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #0071e3;
+            transition: width 0.3s;
+        }
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+        .stat-num {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0071e3;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #6e6e73;
+            margin-top: 4px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6e6e73;
+        }
+        .subtitle-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6e6e73;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginSection">
+        <div style="text-align: center; margin-top: 80px;">
+            <h1 style="font-size: 28px; margin-bottom: 8px;">📚 英语听读练习</h1>
+            <p style="color: #6e6e73; margin-bottom: 40px;">看短片，练听力，学地道表达</p>
+            <div style="max-width: 400px; margin: 0 auto;">
+                <input type="text" id="nicknameInput" placeholder="输入你的昵称（第一次用随便起一个）"
+                    style="width: 100%; padding: 14px; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 16px; margin-bottom: 12px;"
+                    onkeypress="if(event.key==='Enter')login()">
+                <button class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 16px;" onclick="login()">
+                    开始学习
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainSection" class="hidden">
+        <div class="header">
+            <h1>📚 英语听读练习</h1>
+            <div class="user-badge" id="userBadge"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-num" id="statDone">0</div>
+                <div class="stat-label">已完成段落</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statTotal">0</div>
+                <div class="stat-label">当前视频总段落</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statCurrent">0</div>
+                <div class="stat-label">当前进度</div>
+            </div>
+        </div>
+
+        <div class="section" id="inputSection">
+            <div class="section-title">输入 YouTube 视频链接</div>
+            <div class="input-group">
+                <input type="text" id="videoUrl" placeholder="粘贴 YouTube 链接" onkeypress="if(event.key==='Enter')loadVideo()">
+                <button class="btn btn-primary" onclick="loadVideo()">加载</button>
+            </div>
+            <p style="color: #6e6e73; font-size: 13px;">
+                推荐：slow English 教学视频、情景短剧类英语学习视频
+            </p>
+        </div>
+
+        <div id="videoSection" class="hidden">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+
+            <div class="video-container">
+                <iframe id="player" src="" allowfullscreen></iframe>
+            </div>
+
+            <div class="controls">
+                <label class="subtitle-toggle">
+                    <input type="checkbox" id="subtitleToggle" checked onchange="toggleSubtitle()">
+                    显示英文字幕
+                </label>
+                <span style="flex: 1;"></span>
+                <button class="btn btn-secondary" onclick="replay()">🔄 重看</button>
+            </div>
+
+            <div class="section" id="subtitleSection">
+                <div id="subtitleList"></div>
+            </div>
+
+            <div class="section" id="choiceSection">
+                <div class="section-title">看完这段了吗？理解程度如何？</div>
+                <button class="option-btn" onclick="chooseUnderstand()">
+                    ✅ 我完全理解每句话的意思
+                </button>
+                <button class="option-btn" onclick="choosePartial()">
+                    🤔 我大致理解意思，但翻译不准
+                </button>
+            </div>
+
+            <div class="section hidden" id="bilingualSection">
+                <div class="section-title">📖 双语对照</div>
+                <div id="bilingualList"></div>
+                <div style="margin-top: 16px; text-align: center;">
+                    <button class="btn btn-primary" onclick="nextSegment()">下一段 →</button>
+                </div>
+            </div>
+
+            <div class="section hidden" id="quizSection">
+                <div class="section-title">🎯 验证一下，选正确的翻译</div>
+                <div id="quizContent"></div>
+                <div id="quizResult"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 16px;">
+                <button class="btn btn-secondary" onclick="prevSegment()">← 上一段</button>
+                <button class="btn btn-secondary" onclick="resetAll()">换视频</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let nickname = '';
+        let segments = [];
+        let currentIndex = 0;
+        let completedSegments = new Set();
+
+        function login() {
+            const name = document.getElementById('nicknameInput').value.trim();
+            if (!name) { alert('请输入昵称'); return; }
+            nickname = name;
+            document.getElementById('userBadge').textContent = '👤 ' + nickname;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('mainSection').classList.remove('hidden');
+            loadProgress();
+        }
+
+        async function loadProgress() {
+            try {
+                const res = await fetch(`${API_BASE}/api/get_progress?nickname=${encodeURIComponent(nickname)}`);
+                const data = await res.json();
+                if (data.data) {
+                    completedSegments = new Set(data.data.completedSegments || []);
+                    updateStats();
+                }
+            } catch (e) { console.log('加载进度失败', e); }
+        }
+
+        async function saveProgress() {
+            try {
+                await fetch(`${API_BASE}/api/save_progress`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nickname: nickname,
+                        completedSegments: Array.from(completedSegments),
+                        currentVideo: segments[0]?.videoId || '',
+                        currentIndex: currentIndex
+                    })
+                });
+            } catch (e) { console.log('保存进度失败', e); }
+        }
+
+        function updateStats() {
+            document.getElementById('statDone').textContent = completedSegments.size;
+            document.getElementById('statTotal').textContent = segments.length;
+            document.getElementById('statCurrent').textContent = segments.length ? currentIndex + 1 : 0;
+            document.getElementById('progressFill').style.width = segments.length ? ((currentIndex + 1) / segments.length * 100) + '%' : '0%';
+        }
+
+        async function loadVideo() {
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) { alert('请输入视频链接'); return; }
+            document.getElementById('inputSection').innerHTML = '<div class="loading">⏳ 正在加载视频字幕，切分学习片段...</div>';
+            try {
+                const res = await fetch(`${API_BASE}/api/load_video`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: url })
+                });
+                const data = await res.json();
+                if (data.error) {
+                    alert('加载失败: ' + data.error);
+                    resetInputSection();
+                    return;
+                }
+                segments = data.segments.map((s, i) => ({
+                    videoId: data.videoId,
+                    start: Math.floor(s.start),
+                    end: Math.floor(s.end),
+                    subtitles: s.subtitles
+                }));
+                currentIndex = 0;
+                document.getElementById('inputSection').classList.add('hidden');
+                document.getElementById('videoSection').classList.remove('hidden');
+                loadSegment(0);
+            } catch (e) {
+                alert('网络错误: ' + e.message);
+                resetInputSection();
+            }
+        }
+
+        function resetInputSection() {
+            document.getElementById('inputSection').innerHTML = `
+                <div class="section-title">输入 YouTube 视频链接</div>
+                <div class="input-group">
+                    <input type="text" id="videoUrl" placeholder="粘贴 YouTube 链接">
+                    <button class="btn btn-primary" onclick="loadVideo()">加载</button>
+                </div>
+                <p style="color: #6e6e73; font-size: 13px;">推荐：slow English 教学视频、情景短剧类英语学习视频</p>
+            `;
+        }
+
+        function loadSegment(index) {
+            if (index < 0 || index >= segments.length) return;
+            currentIndex = index;
+            const seg = segments[index];
+            document.getElementById('player').src =
+                `https://www.youtube.com/embed/${seg.videoId}?start=${seg.start}&end=${seg.end}&rel=0`;
+            renderSubtitles(seg.subtitles);
+            document.getElementById('choiceSection').classList.remove('hidden');
+            document.getElementById('bilingualSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.add('hidden');
+            updateStats();
+        }
+
+        function renderSubtitles(subs) {
+            const list = document.getElementById('subtitleList');
+            list.innerHTML = subs.map((s, i) => `
+                <div class="subtitle-line" onclick="jumpToTime(${s.start})">
+                    <div class="subtitle-en">${s.text}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleSubtitle() {
+            const show = document.getElementById('subtitleToggle').checked;
+            document.getElementById('subtitleSection').classList.toggle('hidden', !show);
+        }
+
+        function replay() {
+            const seg = segments[currentIndex];
+            document.getElementById('player').src =
+                `https://www.youtube.com/embed/${seg.videoId}?start=${seg.start}&end=${seg.end}&rel=0&t=0`;
+        }
+
+        function jumpToTime(sec) {
+            const seg = segments[currentIndex];
+            document.getElementById('player').src =
+                `https://www.youtube.com/embed/${seg.videoId}?start=${sec}&end=${seg.end}&rel=0`;
+        }
+
+        function choosePartial() {
+            document.getElementById('choiceSection').classList.add('hidden');
+            document.getElementById('bilingualSection').classList.remove('hidden');
+            renderBilingual(segments[currentIndex].subtitles);
+        }
+
+        function renderBilingual(subs) {
+            const list = document.getElementById('bilingualList');
+            const difficultWords = ['struggle', 'effectively', 'actually', 'channel', 'learning', 'practice'];
+            list.innerHTML = subs.map(s => {
+                let enHtml = s.text;
+                difficultWords.forEach(w => {
+                    const re = new RegExp(`\\b${w}\\b`, 'gi');
+                    enHtml = enHtml.replace(re, `<span class="word" title="点击查看释义">${w}</span>`);
+                });
+                return `
+                    <div class="subtitle-line">
+                        <div class="subtitle-en">${enHtml}</div>
+                        <div class="subtitle-zh">中文翻译（后续接入翻译API）</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function chooseUnderstand() {
+            document.getElementById('choiceSection').classList.add('hidden');
+            document.getElementById('quizSection').classList.remove('hidden');
+            renderQuiz();
+        }
+
+        function renderQuiz() {
+            const subs = segments[currentIndex].subtitles;
+            const randomLine = subs[Math.floor(Math.random() * subs.length)];
+            const container = document.getElementById('quizContent');
+            container.innerHTML = `
+                <div style="font-size: 15px; margin-bottom: 16px; font-weight: 500;">
+                    这句话是什么意思？<br><br>
+                    <span style="font-size: 17px; color: #0071e3;">"${randomLine.text}"</span>
+                </div>
+                <button class="option-btn" onclick="checkAnswer(0)">选项A（示例翻译）</button>
+                <button class="option-btn" onclick="checkAnswer(1)">选项B（正确翻译）</button>
+                <button class="option-btn" onclick="checkAnswer(2)">选项C（错误翻译）</button>
+            `;
+            document.getElementById('quizResult').innerHTML = '';
+        }
+
+        function checkAnswer(selected) {
+            const buttons = document.querySelectorAll('#quizContent .option-btn');
+            buttons.forEach((btn, i) => {
+                if (i === 1) btn.classList.add('correct');
+                else if (i === selected) btn.classList.add('wrong');
+                btn.disabled = true;
+            });
+            const result = document.getElementById('quizResult');
+            if (selected === 1) {
+                completedSegments.add(currentIndex);
+                saveProgress();
+                result.innerHTML = `
+                    <div class="result-banner pass">✅ 答对了！</div>
+                    <div style="text-align: center; margin-top: 12px;">
+                        <button class="btn btn-primary" onclick="nextSegment()">下一段 →</button>
+                    </div>
+                `;
+            } else {
+                result.innerHTML = `
+                    <div class="result-banner fail">❌ 答错了，看看双语对照吧</div>
+                    <div style="text-align: center; margin-top: 12px;">
+                        <button class="btn btn-warning" onclick="choosePartial()">查看双语对照</button>
+                    </div>
+                `;
+            }
+        }
+
+        function nextSegment() {
+            completedSegments.add(currentIndex);
+            saveProgress();
+            if (currentIndex < segments.length - 1) {
+                loadSegment(currentIndex + 1);
+            } else {
+                alert('🎉 这个视频全部完成！');
+                resetAll();
+            }
+        }
+
+        function prevSegment() {
+            if (currentIndex > 0) loadSegment(currentIndex - 1);
+        }
+
+        function resetAll() {
+            document.getElementById('videoSection').classList.add('hidden');
+            document.getElementById('inputSection').classList.remove('hidden');
+            resetInputSection();
+            segments = [];
+            currentIndex = 0;
+            updateStats();
+        }
+    </script>
+</body>
+</html>
